@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      email_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          from_email: string
+          id: string
+          resend_id: string | null
+          sent_at: string
+          status: string
+          subject: string
+          to_email: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          from_email: string
+          id?: string
+          resend_id?: string | null
+          sent_at?: string
+          status: string
+          subject: string
+          to_email: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          from_email?: string
+          id?: string
+          resend_id?: string | null
+          sent_at?: string
+          status?: string
+          subject?: string
+          to_email?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
