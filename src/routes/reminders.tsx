@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Mail, CheckCircle2, XCircle } from "lucide-react";
+import { RefreshCw, Mail, CheckCircle2, XCircle, Send } from "lucide-react";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/reminders")({
   head: () => ({
@@ -28,6 +30,8 @@ type EmailLog = {
 };
 
 function RemindersPage() {
+  const [isSending, setIsSending] = useState(false);
+
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["email_logs"],
     queryFn: async () => {
@@ -40,6 +44,29 @@ function RemindersPage() {
       return data as EmailLog[];
     },
   });
+
+  const handleSendNow = async () => {
+    setIsSending(true);
+    try {
+      const res = await fetch("/api/public/hooks/send-reminders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const json = (await res.json()) as { ok?: boolean; results?: Array<{ to: string; status: string; error?: string }>; error?: string };
+      if (res.ok && json.ok) {
+        const failedCount = json.results?.filter((r) => r.status === "failed").length ?? 0;
+        const sentCount = (json.results?.length ?? 0) - failedCount;
+        toast.success(`Sent ${sentCount} email${sentCount !== 1 ? "s" : ""}${failedCount > 0 ? `, ${failedCount} failed` : ""}`);
+        await refetch();
+      } else {
+        toast.error(json.error || "Failed to send emails");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const logs = data ?? [];
   const delivered = logs.filter((l) => l.status === "delivered").length;
@@ -58,10 +85,16 @@ function RemindersPage() {
               Daily reminders sent at 8 AM – 2 PM IST to both recipients.
             </p>
           </div>
-          <Button onClick={() => refetch()} disabled={isFetching} variant="outline">
-            <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleSendNow} disabled={isSending}>
+              <Send className={`mr-2 h-4 w-4 ${isSending ? "animate-pulse" : ""}`} />
+              {isSending ? "Sending…" : "Send Now"}
+            </Button>
+            <Button onClick={() => refetch()} disabled={isFetching} variant="outline">
+              <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
