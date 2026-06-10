@@ -85,10 +85,16 @@ function RemindersPage() {
               Daily reminders sent at 8 AM – 2 PM IST to both recipients.
             </p>
           </div>
-          <Button onClick={() => refetch()} disabled={isFetching} variant="outline">
-            <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleSendNow} disabled={isSending}>
+              <Send className={`mr-2 h-4 w-4 ${isSending ? "animate-pulse" : ""}`} />
+              {isSending ? "Sending…" : "Send Now"}
+            </Button>
+            <Button onClick={() => refetch()} disabled={isFetching} variant="outline">
+              <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
