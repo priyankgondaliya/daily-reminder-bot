@@ -30,6 +30,8 @@ type EmailLog = {
 };
 
 function RemindersPage() {
+  const [isSending, setIsSending] = useState(false);
+
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["email_logs"],
     queryFn: async () => {
@@ -42,6 +44,29 @@ function RemindersPage() {
       return data as EmailLog[];
     },
   });
+
+  const handleSendNow = async () => {
+    setIsSending(true);
+    try {
+      const res = await fetch("/api/public/hooks/send-reminders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const json = (await res.json()) as { ok?: boolean; results?: Array<{ to: string; status: string; error?: string }>; error?: string };
+      if (res.ok && json.ok) {
+        const failedCount = json.results?.filter((r) => r.status === "failed").length ?? 0;
+        const sentCount = (json.results?.length ?? 0) - failedCount;
+        toast.success(`Sent ${sentCount} email${sentCount !== 1 ? "s" : ""}${failedCount > 0 ? `, ${failedCount} failed` : ""}`);
+        await refetch();
+      } else {
+        toast.error(json.error || "Failed to send emails");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const logs = data ?? [];
   const delivered = logs.filter((l) => l.status === "delivered").length;
