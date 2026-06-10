@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const RECIPIENTS = ["nency.dave321@gmail.com", "nency.dave@cmarix.com"];
+// const RECIPIENTS = ["nency.dave321@gmail.com", "nency.dave@cmarix.com"];
+const RECIPIENT = "nency.dave@cmarix.com";
 const FROM_EMAIL = "Reminder <onboarding@resend.dev>";
 const SUBJECT = "Reminder: Log in to Web & Keka";
 const HTML_BODY = `
