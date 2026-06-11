@@ -3,7 +3,17 @@ import nodemailer from "nodemailer";
 
 const RECIPIENTS = ["nency.dave321@gmail.com", "nency.dave@cmarix.com"];
 const SUBJECT = "⏰ Reminder: Log in to Web Portal & Keka";
-const HTML_BODY = `
+const BASE_URL = "https://daily-reminder-bot.lovable.app";
+
+function istDateString(): string {
+  const now = new Date();
+  const ist = new Date(now.getTime() + (5.5 * 60 - now.getTimezoneOffset()) * 60000);
+  return ist.toISOString().slice(0, 10);
+}
+
+function buildHtml(toEmail: string): string {
+  const stopUrl = `${BASE_URL}/api/public/hooks/stop-today?email=${encodeURIComponent(toEmail)}`;
+  return `
 <!DOCTYPE html>
 <html>
   <body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
@@ -41,11 +51,28 @@ const HTML_BODY = `
                   </tr>
                 </table>
 
-                <div style="padding:14px 16px;background:#eef2ff;border-left:4px solid #4f46e5;border-radius:8px;margin-bottom:8px;">
+                <div style="padding:14px 16px;background:#eef2ff;border-left:4px solid #4f46e5;border-radius:8px;margin-bottom:20px;">
                   <p style="margin:0;font-size:13px;color:#3730a3;line-height:1.5;">
                     🕐 This reminder runs every hour from <strong>8 AM to 2 PM IST</strong>, Monday to Friday.
                   </p>
                 </div>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td align="center" style="padding:8px 0 4px;">
+                      <a href="${stopUrl}" style="display:inline-block;background:#ef4444;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 22px;border-radius:10px;">
+                        🛑 Stop reminders for today
+                      </a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding:8px 0 0;">
+                      <p style="margin:0;font-size:12px;color:#6b7280;line-height:1.5;">
+                        Already logged in? Click above and you won't get any more reminders today.<br/>Reminders resume automatically tomorrow.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
             <tr>
@@ -62,6 +89,7 @@ const HTML_BODY = `
   </body>
 </html>
 `;
+}
 
 export const Route = createFileRoute("/api/public/hooks/send-reminders")({
   server: {
@@ -86,6 +114,25 @@ export const Route = createFileRoute("/api/public/hooks/send-reminders")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const fromEmail = EMAIL_FROM_NAME ? `${EMAIL_FROM_NAME} <${EMAIL_FROM}>` : EMAIL_FROM;
+        const today = istDateString();
+
+        // Check if reminders are stopped for today
+        const { data: stopRow } = await supabaseAdmin
+          .from("reminder_stops")
+          .select("stopped_by, stopped_at")
+          .eq("stop_date", today)
+          .maybeSingle();
+
+        if (stopRow) {
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              skipped: true,
+              reason: `Reminders stopped for ${today} by ${stopRow.stopped_by}`,
+            }),
+            { headers: { "Content-Type": "application/json" } }
+          );
+        }
 
         const transporter = nodemailer.createTransport({
           host: SMTP_HOST,
@@ -102,7 +149,7 @@ export const Route = createFileRoute("/api/public/hooks/send-reminders")({
               from: fromEmail,
               to,
               subject: SUBJECT,
-              html: HTML_BODY,
+              html: buildHtml(to),
             });
 
             await supabaseAdmin.from("email_logs").insert({
