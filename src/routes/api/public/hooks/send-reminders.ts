@@ -1,15 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import nodemailer from "nodemailer";
 
-// const RECIPIENTS = ["nency.dave321@gmail.com", "nency.dave@cmarix.com"];
-const RECIPIENTS = ["nency.dave@cmarix.com"];
-const FROM_EMAIL = "Reminder <onboarding@resend.dev>";
+const RECIPIENTS = ["nency.dave321@gmail.com", "nency.dave@cmarix.com"];
 const SUBJECT = "Reminder: Log in to Web & Keka";
 const HTML_BODY = `
   <div style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; padding:24px; max-width:560px; margin:auto;">
     <h2 style="color:#111;">Daily Login Reminder</h2>
-    <p style="font-size:15px; color:#333; line-height:1.6;">
-      Hi Nency,
-    </p>
+    <p style="font-size:15px; color:#333; line-height:1.6;">Hi Nency,</p>
     <p style="font-size:15px; color:#333; line-height:1.6;">
       This is your scheduled reminder to <strong>log in to the Web portal</strong> and <strong>Keka</strong>.
     </p>
@@ -24,60 +21,57 @@ export const Route = createFileRoute("/api/public/hooks/send-reminders")({
   server: {
     handlers: {
       POST: async () => {
-        const RESEND_API_KEY = process.env.RESEND_API_KEY;
-        if (!RESEND_API_KEY) {
+        const {
+          SMTP_HOST,
+          SMTP_PORT,
+          SMTP_SECURE,
+          SMTP_USER,
+          SMTP_PASS,
+          EMAIL_FROM,
+          EMAIL_FROM_NAME,
+        } = process.env;
+
+        if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS || !EMAIL_FROM) {
           return new Response(
-            JSON.stringify({ error: "RESEND_API_KEY not configured" }),
+            JSON.stringify({ error: "SMTP env vars not configured" }),
             { status: 500, headers: { "Content-Type": "application/json" } }
           );
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const fromEmail = EMAIL_FROM_NAME ? `${EMAIL_FROM_NAME} <${EMAIL_FROM}>` : EMAIL_FROM;
+
+        const transporter = nodemailer.createTransport({
+          host: SMTP_HOST,
+          port: Number(SMTP_PORT ?? 587),
+          secure: SMTP_SECURE === "true",
+          auth: { user: SMTP_USER, pass: SMTP_PASS },
+        });
+
         const results: Array<{ to: string; status: string; id?: string; error?: string }> = [];
 
         for (const to of RECIPIENTS) {
           try {
-            const res = await fetch("https://api.resend.com/emails", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${RESEND_API_KEY}`,
-              },
-              body: JSON.stringify({
-                from: FROM_EMAIL,
-                to: [to],
-                subject: SUBJECT,
-                html: HTML_BODY,
-              }),
+            const info = await transporter.sendMail({
+              from: fromEmail,
+              to,
+              subject: SUBJECT,
+              html: HTML_BODY,
             });
 
-            const data = (await res.json()) as { id?: string; message?: string; name?: string };
-
-            if (res.ok && data.id) {
-              await supabaseAdmin.from("email_logs").insert({
-                to_email: to,
-                from_email: FROM_EMAIL,
-                subject: SUBJECT,
-                status: "delivered",
-                resend_id: data.id,
-              });
-              results.push({ to, status: "delivered", id: data.id });
-            } else {
-              const errMsg = data.message || data.name || `HTTP ${res.status}`;
-              await supabaseAdmin.from("email_logs").insert({
-                to_email: to,
-                from_email: FROM_EMAIL,
-                subject: SUBJECT,
-                status: "failed",
-                error_message: errMsg,
-              });
-              results.push({ to, status: "failed", error: errMsg });
-            }
+            await supabaseAdmin.from("email_logs").insert({
+              to_email: to,
+              from_email: fromEmail,
+              subject: SUBJECT,
+              status: "delivered",
+              resend_id: info.messageId ?? null,
+            });
+            results.push({ to, status: "delivered", id: info.messageId });
           } catch (err) {
             const errMsg = err instanceof Error ? err.message : String(err);
             await supabaseAdmin.from("email_logs").insert({
               to_email: to,
-              from_email: FROM_EMAIL,
+              from_email: fromEmail,
               subject: SUBJECT,
               status: "failed",
               error_message: errMsg,
