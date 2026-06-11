@@ -50,6 +50,27 @@ export type Database = {
         }
         Relationships: []
       }
+      reminder_stops: {
+        Row: {
+          id: string
+          stop_date: string
+          stopped_at: string
+          stopped_by: string
+        }
+        Insert: {
+          id?: string
+          stop_date: string
+          stopped_at?: string
+          stopped_by: string
+        }
+        Update: {
+          id?: string
+          stop_date?: string
+          stopped_at?: string
+          stopped_by?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

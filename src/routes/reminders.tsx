@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Mail, CheckCircle2, XCircle, Send } from "lucide-react";
+import { RefreshCw, Mail, CheckCircle2, XCircle, Send, BellOff } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -29,8 +29,20 @@ type EmailLog = {
   sent_at: string;
 };
 
+type StopRow = { stop_date: string; stopped_by: string; stopped_at: string };
+
+const RECIPIENTS = ["nency.dave321@gmail.com", "nency.dave@cmarix.com"];
+
+function istDateString(): string {
+  const now = new Date();
+  const ist = new Date(now.getTime() + (5.5 * 60 - now.getTimezoneOffset()) * 60000);
+  return ist.toISOString().slice(0, 10);
+}
+
 function RemindersPage() {
   const [isSending, setIsSending] = useState(false);
+  const [stoppingEmail, setStoppingEmail] = useState<string | null>(null);
+  const today = istDateString();
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["email_logs"],
@@ -45,18 +57,38 @@ function RemindersPage() {
     },
   });
 
+  const { data: stopToday, refetch: refetchStop } = useQuery({
+    queryKey: ["reminder_stop", today],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reminder_stops")
+        .select("*")
+        .eq("stop_date", today)
+        .maybeSingle();
+      if (error) throw error;
+      return data as StopRow | null;
+    },
+  });
+
   const handleSendNow = async () => {
     setIsSending(true);
     try {
-      const res = await fetch("/api/public/hooks/send-reminders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      const json = (await res.json()) as { ok?: boolean; results?: Array<{ to: string; status: string; error?: string }>; error?: string };
+      const res = await fetch("/api/public/hooks/send-reminders", { method: "POST" });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        skipped?: boolean;
+        reason?: string;
+        results?: Array<{ to: string; status: string; error?: string }>;
+        error?: string;
+      };
       if (res.ok && json.ok) {
-        const failedCount = json.results?.filter((r) => r.status === "failed").length ?? 0;
-        const sentCount = (json.results?.length ?? 0) - failedCount;
-        toast.success(`Sent ${sentCount} email${sentCount !== 1 ? "s" : ""}${failedCount > 0 ? `, ${failedCount} failed` : ""}`);
+        if (json.skipped) {
+          toast.info(json.reason ?? "Reminders stopped for today");
+        } else {
+          const failedCount = json.results?.filter((r) => r.status === "failed").length ?? 0;
+          const sentCount = (json.results?.length ?? 0) - failedCount;
+          toast.success(`Sent ${sentCount} email${sentCount !== 1 ? "s" : ""}${failedCount > 0 ? `, ${failedCount} failed` : ""}`);
+        }
         await refetch();
       } else {
         toast.error(json.error || "Failed to send emails");
@@ -65,6 +97,26 @@ function RemindersPage() {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleStopToday = async (email: string) => {
+    setStoppingEmail(email);
+    try {
+      const res = await fetch(
+        `/api/public/hooks/stop-today?email=${encodeURIComponent(email)}`,
+        { method: "GET" }
+      );
+      if (res.ok) {
+        toast.success(`Reminders stopped for today (by ${email})`);
+        await refetchStop();
+      } else {
+        toast.error("Failed to stop reminders");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setStoppingEmail(null);
     }
   };
 
@@ -78,7 +130,7 @@ function RemindersPage() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-6xl space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Reminder Email Log</h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -96,6 +148,47 @@ function RemindersPage() {
             </Button>
           </div>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BellOff className="h-5 w-5" />
+              Stop reminders for today ({today} IST)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {stopToday ? (
+              <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-3 text-sm">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <span className="text-green-900">
+                  Reminders are <strong>stopped for today</strong> — stopped by{" "}
+                  <strong>{stopToday.stopped_by}</strong> at {fmtIST(stopToday.stopped_at)}.
+                  They'll resume automatically tomorrow.
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Already aware of the reminder? Stop further emails for today on behalf of either recipient.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {RECIPIENTS.map((email) => (
+                    <Button
+                      key={email}
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleStopToday(email)}
+                      disabled={stoppingEmail === email}
+                    >
+                      <BellOff className="mr-2 h-4 w-4" />
+                      {stoppingEmail === email ? "Stopping…" : `Stop for ${email}`}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
