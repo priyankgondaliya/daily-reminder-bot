@@ -133,8 +133,62 @@ function RemindersPage() {
   const delivered = logs.filter((l) => l.status === "delivered").length;
   const failed = logs.filter((l) => l.status !== "delivered").length;
 
+  // Filters & pagination
+  const [search, setSearch] = useState("");
+  const [recipientFilter, setRecipientFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
   const fmtIST = (iso: string) =>
     new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" });
+
+  const recipientOptions = useMemo(
+    () => Array.from(new Set([...RECIPIENTS, ...logs.map((l) => l.to_email)])),
+    [logs]
+  );
+
+  const filteredLogs = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const fromTs = dateFrom ? new Date(dateFrom + "T00:00:00").getTime() : null;
+    const toTs = dateTo ? new Date(dateTo + "T23:59:59.999").getTime() : null;
+    return logs.filter((l) => {
+      if (recipientFilter !== "all" && l.to_email !== recipientFilter) return false;
+      if (statusFilter !== "all") {
+        if (statusFilter === "delivered" && l.status !== "delivered") return false;
+        if (statusFilter === "failed" && l.status === "delivered") return false;
+      }
+      const ts = new Date(l.sent_at).getTime();
+      if (fromTs !== null && ts < fromTs) return false;
+      if (toTs !== null && ts > toTs) return false;
+      if (q) {
+        const hay = `${l.to_email} ${l.from_email} ${l.subject} ${l.error_message ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [logs, search, recipientFilter, statusFilter, dateFrom, dateTo]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pagedLogs = filteredLogs.slice(pageStart, pageStart + pageSize);
+
+  const hasActiveFilter =
+    search !== "" || recipientFilter !== "all" || statusFilter !== "all" || dateFrom !== "" || dateTo !== "";
+
+  const resetFilters = () => {
+    setSearch("");
+    setRecipientFilter("all");
+    setStatusFilter("all");
+    setDateFrom("");
+    setDateTo("");
+    setPage(1);
+  };
+
+
 
   return (
     <div className="min-h-screen bg-background p-6">
