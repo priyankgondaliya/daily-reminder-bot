@@ -60,7 +60,7 @@ function RemindersPage() {
         .from("email_logs")
         .select("*")
         .order("sent_at", { ascending: false })
-        .limit(200);
+        .limit(2000);
       if (error) throw error;
       return data as EmailLog[];
     },
