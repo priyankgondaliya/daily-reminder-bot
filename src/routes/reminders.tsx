@@ -261,44 +261,184 @@ function RemindersPage() {
           <CardHeader>
             <CardTitle>Delivery History</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {/* Filters */}
+            <div className="grid gap-3 md:grid-cols-12">
+              <div className="md:col-span-4 relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Search email, subject, error…"
+                  className="pl-8"
+                />
+              </div>
+              <div className="md:col-span-3">
+                <Select
+                  value={recipientFilter}
+                  onValueChange={(v) => {
+                    setRecipientFilter(v);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Recipient" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All recipients</SelectItem>
+                    {recipientOptions.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {r}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-2">
+                <Select
+                  value={statusFilter}
+                  onValueChange={(v) => {
+                    setStatusFilter(v);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All statuses</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-3 grid grid-cols-2 gap-2">
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => {
+                    setDateFrom(e.target.value);
+                    setPage(1);
+                  }}
+                  aria-label="From date"
+                />
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => {
+                    setDateTo(e.target.value);
+                    setPage(1);
+                  }}
+                  aria-label="To date"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-sm text-muted-foreground flex-wrap gap-2">
+              <span>
+                Showing <strong>{filteredLogs.length === 0 ? 0 : pageStart + 1}</strong>–
+                <strong>{Math.min(pageStart + pageSize, filteredLogs.length)}</strong> of{" "}
+                <strong>{filteredLogs.length}</strong>
+                {hasActiveFilter && ` (filtered from ${logs.length})`}
+              </span>
+              {hasActiveFilter && (
+                <Button variant="ghost" size="sm" onClick={resetFilters}>
+                  <X className="mr-1 h-3 w-3" />
+                  Clear filters
+                </Button>
+              )}
+            </div>
+
             {isLoading ? (
               <p className="text-sm text-muted-foreground">Loading…</p>
             ) : logs.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No emails sent yet. The first reminder will fire at the next scheduled hour (IST).
               </p>
+            ) : filteredLogs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No emails match the current filters.</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Sent At (IST)</TableHead>
-                    <TableHead>From</TableHead>
-                    <TableHead>To</TableHead>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {logs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell className="font-mono text-xs">{fmtIST(log.sent_at)}</TableCell>
-                      <TableCell className="text-sm">{log.from_email}</TableCell>
-                      <TableCell className="text-sm">{log.to_email}</TableCell>
-                      <TableCell className="text-sm">{log.subject}</TableCell>
-                      <TableCell>
-                        {log.status === "delivered" ? (
-                          <Badge className="bg-green-600 hover:bg-green-700">Delivered</Badge>
-                        ) : (
-                          <Badge variant="destructive" title={log.error_message ?? ""}>
-                            Failed
-                          </Badge>
-                        )}
-                      </TableCell>
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Sent At (IST)</TableHead>
+                      <TableHead>From</TableHead>
+                      <TableHead>To</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {pagedLogs.map((log) => (
+                      <TableRow key={log.id}>
+                        <TableCell className="font-mono text-xs">{fmtIST(log.sent_at)}</TableCell>
+                        <TableCell className="text-sm">{log.from_email}</TableCell>
+                        <TableCell className="text-sm">{log.to_email}</TableCell>
+                        <TableCell className="text-sm">{log.subject}</TableCell>
+                        <TableCell>
+                          {log.status === "delivered" ? (
+                            <Badge className="bg-green-600 hover:bg-green-700">Delivered</Badge>
+                          ) : (
+                            <Badge variant="destructive" title={log.error_message ?? ""}>
+                              Failed
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                {/* Pagination */}
+                <div className="flex items-center justify-between flex-wrap gap-3 pt-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Rows per page</span>
+                    <Select
+                      value={String(pageSize)}
+                      onValueChange={(v) => {
+                        setPageSize(Number(v));
+                        setPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[10, 25, 50, 100].map((n) => (
+                          <SelectItem key={n} value={String(n)}>
+                            {n}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">
+                      Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage <= 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage >= totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
