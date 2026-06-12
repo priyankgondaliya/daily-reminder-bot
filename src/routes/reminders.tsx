@@ -194,11 +194,19 @@ function RemindersPage() {
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Reminder Email Log</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Daily reminders sent at 8 AM – 2 PM IST to both recipients.
-            </p>
+          <div className="space-y-2">
+            <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 px-2 text-muted-foreground hover:text-foreground">
+              <Link to="/">
+                <ArrowLeft className="mr-1 h-4 w-4" />
+                Back to dashboard
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Reminder Email Log</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Daily reminders sent at 8 AM – 2 PM IST to both recipients.
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button onClick={handleSendNow} disabled={isSending}>
