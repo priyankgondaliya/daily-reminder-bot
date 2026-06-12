@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RefreshCw, Mail, CheckCircle2, XCircle, Send, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { RefreshCw, Mail, CheckCircle2, XCircle, Send, Search, X, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useMemo, useState } from "react";
 
