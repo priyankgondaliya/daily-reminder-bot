@@ -149,46 +149,20 @@ function RemindersPage() {
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BellOff className="h-5 w-5" />
-              Stop reminders for today ({today} IST)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {stopToday ? (
-              <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-3 text-sm">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
+        {stopToday && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-2 rounded-md border border-green-200 bg-green-50 p-3 text-sm">
+                <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5" />
                 <span className="text-green-900">
-                  Reminders are <strong>stopped for today</strong> — stopped by{" "}
+                  Reminders are <strong>stopped for today</strong> ({today} IST) — stopped by{" "}
                   <strong>{stopToday.stopped_by}</strong> at {fmtIST(stopToday.stopped_at)}.
-                  They'll resume automatically tomorrow.
+                  No more emails will go to either recipient today. Reminders resume automatically tomorrow.
                 </span>
               </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Already aware of the reminder? Stop further emails for today on behalf of either recipient.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {RECIPIENTS.map((email) => (
-                    <Button
-                      key={email}
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleStopToday(email)}
-                      disabled={stoppingEmail === email}
-                    >
-                      <BellOff className="mr-2 h-4 w-4" />
-                      {stoppingEmail === email ? "Stopping…" : `Stop for ${email}`}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
