@@ -7,7 +7,7 @@ const SUBJECT_PREFIX = "🎂 Happy Birthday Mari Jaan";
 
 type Wish = { subject: string; heading: string; body: string };
 
-// 13 unique heart-touching messages (00:00 → 12:00 IST hourly)
+// 24 unique heart-touching messages (00:00 → 23:00 IST, one per hour)
 const WISHES: Wish[] = [
   {
     subject: `${SUBJECT_PREFIX} — Midnight ❤️`,
@@ -73,6 +73,61 @@ const WISHES: Wish[] = [
     subject: `${SUBJECT_PREFIX} — Noon ❤️🎂`,
     heading: "Bapor thai gai, pan wishes puri nathi thai 🎉",
     body: `Aakhi sawar thi tane wish kari raho chhu — kadach tane bahu lage, pan mara mate ek j divas chhe je puro tara namey chhe.\nHappy Birthday mari jaan.\nTu chhe to badhu chhe. Tara vagar kai j nathi. ❤️♾️`,
+  },
+  {
+    subject: `${SUBJECT_PREFIX} — 1 PM`,
+    heading: "Bapor ni chai ma pan tari yaad ☕❤️",
+    body: `Aaje bapor ni chai pitya, pan tara vagar swaad adhuro lagyo.\nTaru saath — nano pan hoy — mari duniya no sauthi vahalo pal chhe.\nMari jaan, tane khoob khoob birthday wishes.`,
+  },
+  {
+    subject: `${SUBJECT_PREFIX} — 2 PM`,
+    heading: "Tu mari shaanti chhe 🌸",
+    body: `Duniya ni bhaagam-bhaag ma jyare thaki jau chu,\ntara chehra ni ek vichar aavi jaay to badhu light lagvu.\nAaje aa vichar ne wish ma badli didhi — Happy Birthday mari zindagi. ❤️`,
+  },
+  {
+    subject: `${SUBJECT_PREFIX} — 3 PM`,
+    heading: "Sauthi lucky hu chhu 🍀",
+    body: `Loko kismat mate prarthana kare, mari kismat to tya thi j sudhri jyare tu mari zindagi ma aavi.\nAa varas Bhagwan tane etli khushiyo aape ke ganvi kadhvi mushkel thai jaay.\nI love you, hamesha. ❤️`,
+  },
+  {
+    subject: `${SUBJECT_PREFIX} — 4 PM`,
+    heading: "Tara mate ek promise 🤍",
+    body: `Jindagi ma gme te aave — up, down, twist, turn —\nek vaat pakki chhe: hu tari sathe hoish. Har situation ma.\nAa mari birthday gift chhe tane — mari saath, forever. ❤️♾️`,
+  },
+  {
+    subject: `${SUBJECT_PREFIX} — 5 PM`,
+    heading: "Sanjh padi, taru namey 🌇",
+    body: `Suraj dhalva ne aavyo, pan aaje aakho divas ek j nam mara hoth par rahyo — taru.\nTara birthday no ek ek pal special banavvo chhe — bhale hu dur hou, dil pase chhe. ❤️`,
+  },
+  {
+    subject: `${SUBJECT_PREFIX} — 6 PM`,
+    heading: "Tu Mari Duniya no Center 🌍❤️",
+    body: `Loko dur na taara jode wish mange, mari duniya to tara nam ni farte fare chhe.\nAaje bhagwan pase ek j maang chhe — tane hamesha khushi ape, kyarey ochhap na aave.\nHappy Birthday jaan.`,
+  },
+  {
+    subject: `${SUBJECT_PREFIX} — 7 PM`,
+    heading: "Diva prakat, tara mate 🪔",
+    body: `Aaje mane em lage chhe ke akash na taara pan tane wish karva chamki rahya chhe.\nTu etli special chhe — ke duniya pan taara birthday ne celebrate kare chhe.\nAne hu? Hu to poora dil thi celebrate karu chhu. ❤️`,
+  },
+  {
+    subject: `${SUBJECT_PREFIX} — 8 PM`,
+    heading: "Raat padi, pan yaado shant nathi 🌙",
+    body: `Raat ni shaanti ma pan mara mann ma tara j vicharo chalu chhe.\nAaje taro divas puro thava jai rahyo chhe, pan mara dil ma tara mate no prem to hamesha navo j rahvano.\nI love you infinitely. ❤️♾️`,
+  },
+  {
+    subject: `${SUBJECT_PREFIX} — 9 PM`,
+    heading: "Mari Adhi Adhuri Zindagi Tu Puri Kari 💫",
+    body: `Tu mari life ma aavi tya sudhi hu jantiyo j nahi ke prem ni takat kevi hoi.\nTe mane sikhvadyu — bharoso karvu, nirbhay banvu, ane khoob prem karvu.\nAa varas tane badhu maley je te dilthi chahyu chhe. ❤️`,
+  },
+  {
+    subject: `${SUBJECT_PREFIX} — 10 PM`,
+    heading: "Aankh bandh karu ne tu dekhau 🌌",
+    body: `Aankh bandh karu — tu dekhau. Aankh khali — tu yaad aave.\nAa aakho divas taro hato, ane mara mate darek divas taro j hoy chhe.\nHappy Birthday mari jaan. Tu sauthi vahali chhe. ❤️`,
+  },
+  {
+    subject: `${SUBJECT_PREFIX} — 11 PM`,
+    heading: "Divas puro thava aavyo, prem ochho nathi thai 🕊️❤️",
+    body: `Ghadiyar aeek ek minute pachu bolavti chhe, pan mara dil ma tara mate no prem hamesha 12 vage j rahevo.\nAje taro divas etlo j special hato jetli tu chhe.\nGood night mari zindagi — kaale thi aa prem ne aur badhavvano chhe. ❤️♾️`,
   },
 ];
 
@@ -149,14 +204,10 @@ export const Route = createFileRoute("/api/public/hooks/send-birthday")({
         const todayIST = istDateString(now);
         const hourIST = istHour(now);
 
-        // Only fire on the birthday date and 00:00 – 12:00 IST (unless manual force)
+        // Only fire on the birthday date (unless manual force) — every hour of the day is allowed
         if (!force) {
           if (todayIST !== BIRTHDAY_DATE_IST) {
             return new Response(JSON.stringify({ ok: true, skipped: true, reason: `Not birthday date (IST=${todayIST})` }),
-              { headers: { "Content-Type": "application/json" } });
-          }
-          if (hourIST < 0 || hourIST > 12) {
-            return new Response(JSON.stringify({ ok: true, skipped: true, reason: `Outside window (IST hour=${hourIST})` }),
               { headers: { "Content-Type": "application/json" } });
           }
         }
