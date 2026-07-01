@@ -233,7 +233,11 @@ function RemindersPage() {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={handleSendBirthday} disabled={isSendingBday} className="bg-pink-600 hover:bg-pink-700 text-white">
+              <Cake className={`mr-2 h-4 w-4 ${isSendingBday ? "animate-pulse" : ""}`} />
+              {isSendingBday ? "Sending…" : "Send Birthday Wish 🎂"}
+            </Button>
             <Button onClick={handleSendNow} disabled={isSending}>
               <Send className={`mr-2 h-4 w-4 ${isSending ? "animate-pulse" : ""}`} />
               {isSending ? "Sending…" : "Send Now"}
