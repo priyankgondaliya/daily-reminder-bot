@@ -50,6 +50,7 @@ function istDateString(): string {
 
 function RemindersPage() {
   const [isSending, setIsSending] = useState(false);
+  const [isSendingBday, setIsSendingBday] = useState(false);
   const [stoppingEmail, setStoppingEmail] = useState<string | null>(null);
   const today = istDateString();
 
