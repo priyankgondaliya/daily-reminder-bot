@@ -13,6 +13,7 @@ import { Route as RemindersRouteImport } from './routes/reminders'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicHooksStopTodayRouteImport } from './routes/api/public/hooks/stop-today'
 import { Route as ApiPublicHooksSendRemindersRouteImport } from './routes/api/public/hooks/send-reminders'
+import { Route as ApiPublicHooksSendBirthdayRouteImport } from './routes/api/public/hooks/send-birthday'
 
 const RemindersRoute = RemindersRouteImport.update({
   id: '/reminders',
@@ -35,16 +36,24 @@ const ApiPublicHooksSendRemindersRoute =
     path: '/api/public/hooks/send-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSendBirthdayRoute =
+  ApiPublicHooksSendBirthdayRouteImport.update({
+    id: '/api/public/hooks/send-birthday',
+    path: '/api/public/hooks/send-birthday',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/reminders': typeof RemindersRoute
+  '/api/public/hooks/send-birthday': typeof ApiPublicHooksSendBirthdayRoute
   '/api/public/hooks/send-reminders': typeof ApiPublicHooksSendRemindersRoute
   '/api/public/hooks/stop-today': typeof ApiPublicHooksStopTodayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/reminders': typeof RemindersRoute
+  '/api/public/hooks/send-birthday': typeof ApiPublicHooksSendBirthdayRoute
   '/api/public/hooks/send-reminders': typeof ApiPublicHooksSendRemindersRoute
   '/api/public/hooks/stop-today': typeof ApiPublicHooksStopTodayRoute
 }
@@ -52,6 +61,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/reminders': typeof RemindersRoute
+  '/api/public/hooks/send-birthday': typeof ApiPublicHooksSendBirthdayRoute
   '/api/public/hooks/send-reminders': typeof ApiPublicHooksSendRemindersRoute
   '/api/public/hooks/stop-today': typeof ApiPublicHooksStopTodayRoute
 }
@@ -60,18 +70,21 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/reminders'
+    | '/api/public/hooks/send-birthday'
     | '/api/public/hooks/send-reminders'
     | '/api/public/hooks/stop-today'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/reminders'
+    | '/api/public/hooks/send-birthday'
     | '/api/public/hooks/send-reminders'
     | '/api/public/hooks/stop-today'
   id:
     | '__root__'
     | '/'
     | '/reminders'
+    | '/api/public/hooks/send-birthday'
     | '/api/public/hooks/send-reminders'
     | '/api/public/hooks/stop-today'
   fileRoutesById: FileRoutesById
@@ -79,6 +92,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   RemindersRoute: typeof RemindersRoute
+  ApiPublicHooksSendBirthdayRoute: typeof ApiPublicHooksSendBirthdayRoute
   ApiPublicHooksSendRemindersRoute: typeof ApiPublicHooksSendRemindersRoute
   ApiPublicHooksStopTodayRoute: typeof ApiPublicHooksStopTodayRoute
 }
@@ -113,12 +127,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSendRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/send-birthday': {
+      id: '/api/public/hooks/send-birthday'
+      path: '/api/public/hooks/send-birthday'
+      fullPath: '/api/public/hooks/send-birthday'
+      preLoaderRoute: typeof ApiPublicHooksSendBirthdayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   RemindersRoute: RemindersRoute,
+  ApiPublicHooksSendBirthdayRoute: ApiPublicHooksSendBirthdayRoute,
   ApiPublicHooksSendRemindersRoute: ApiPublicHooksSendRemindersRoute,
   ApiPublicHooksStopTodayRoute: ApiPublicHooksStopTodayRoute,
 }

@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RefreshCw, Mail, CheckCircle2, XCircle, Send, Search, X, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
+import { RefreshCw, Mail, CheckCircle2, XCircle, Send, Search, X, ChevronLeft, ChevronRight, ArrowLeft, Cake } from "lucide-react";
 import { toast } from "sonner";
 import { useMemo, useState } from "react";
 
@@ -50,6 +50,7 @@ function istDateString(): string {
 
 function RemindersPage() {
   const [isSending, setIsSending] = useState(false);
+  const [isSendingBday, setIsSendingBday] = useState(false);
   const [stoppingEmail, setStoppingEmail] = useState<string | null>(null);
   const today = istDateString();
 
@@ -108,6 +109,30 @@ function RemindersPage() {
       setIsSending(false);
     }
   };
+  const handleSendBirthday = async () => {
+    setIsSendingBday(true);
+    try {
+      const res = await fetch("/api/public/hooks/send-birthday?force=1", { method: "POST" });
+      const json = (await res.json()) as {
+        ok?: boolean; wish?: string;
+        results?: Array<{ to: string; status: string; error?: string }>;
+        error?: string;
+      };
+      if (res.ok && json.ok && json.results) {
+        const failed = json.results.filter((r) => r.status === "failed").length;
+        const sent = json.results.length - failed;
+        toast.success(`🎂 Birthday wish sent (${sent} delivered${failed ? `, ${failed} failed` : ""})`);
+        await refetch();
+      } else {
+        toast.error(json.error || "Failed to send birthday wish");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsSendingBday(false);
+    }
+  };
+
 
   const handleStopToday = async (email: string) => {
     setStoppingEmail(email);
@@ -208,7 +233,11 @@ function RemindersPage() {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={handleSendBirthday} disabled={isSendingBday} className="bg-pink-600 hover:bg-pink-700 text-white">
+              <Cake className={`mr-2 h-4 w-4 ${isSendingBday ? "animate-pulse" : ""}`} />
+              {isSendingBday ? "Sending…" : "Send Birthday Wish 🎂"}
+            </Button>
             <Button onClick={handleSendNow} disabled={isSending}>
               <Send className={`mr-2 h-4 w-4 ${isSending ? "animate-pulse" : ""}`} />
               {isSending ? "Sending…" : "Send Now"}
