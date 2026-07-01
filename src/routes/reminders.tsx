@@ -109,6 +109,30 @@ function RemindersPage() {
       setIsSending(false);
     }
   };
+  const handleSendBirthday = async () => {
+    setIsSendingBday(true);
+    try {
+      const res = await fetch("/api/public/hooks/send-birthday?force=1", { method: "POST" });
+      const json = (await res.json()) as {
+        ok?: boolean; wish?: string;
+        results?: Array<{ to: string; status: string; error?: string }>;
+        error?: string;
+      };
+      if (res.ok && json.ok && json.results) {
+        const failed = json.results.filter((r) => r.status === "failed").length;
+        const sent = json.results.length - failed;
+        toast.success(`🎂 Birthday wish sent (${sent} delivered${failed ? `, ${failed} failed` : ""})`);
+        await refetch();
+      } else {
+        toast.error(json.error || "Failed to send birthday wish");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsSendingBday(false);
+    }
+  };
+
 
   const handleStopToday = async (email: string) => {
     setStoppingEmail(email);
