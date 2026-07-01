@@ -7,7 +7,7 @@ const SUBJECT_PREFIX = "🎂 Happy Birthday Mari Jaan";
 
 type Wish = { subject: string; heading: string; body: string };
 
-// 13 unique heart-touching messages (00:00 → 12:00 IST hourly)
+// 24 unique heart-touching messages (00:00 → 23:00 IST, one per hour)
 const WISHES: Wish[] = [
   {
     subject: `${SUBJECT_PREFIX} — Midnight ❤️`,
