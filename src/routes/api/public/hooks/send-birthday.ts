@@ -204,14 +204,10 @@ export const Route = createFileRoute("/api/public/hooks/send-birthday")({
         const todayIST = istDateString(now);
         const hourIST = istHour(now);
 
-        // Only fire on the birthday date and 00:00 – 12:00 IST (unless manual force)
+        // Only fire on the birthday date (unless manual force) — every hour of the day is allowed
         if (!force) {
           if (todayIST !== BIRTHDAY_DATE_IST) {
             return new Response(JSON.stringify({ ok: true, skipped: true, reason: `Not birthday date (IST=${todayIST})` }),
-              { headers: { "Content-Type": "application/json" } });
-          }
-          if (hourIST < 0 || hourIST > 12) {
-            return new Response(JSON.stringify({ ok: true, skipped: true, reason: `Outside window (IST hour=${hourIST})` }),
               { headers: { "Content-Type": "application/json" } });
           }
         }
